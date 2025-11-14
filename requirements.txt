@@ -1,0 +1,10 @@
+boto3
+requests
+python-dateutil
+geopandas
+pandas
+shapely
+fiona
+pyproj
+pyarrow
+fastparquet
