@@ -8,7 +8,7 @@ The Nashville 311 API provides service request data with coordinates, but it doe
 
 We're using the **Council Districts** dataset from the [Nashville Open Data Portal](https://data.nashville.gov/datasets/council-districts-current-1/explore).
 
-![Dataset Overview](dataset-overview.png)
+<img width="1920" height="961" alt="dataset-overview.png" src="https://github.com/user-attachments/assets/ef115b59-31b0-40cd-929e-37b92a00d184" />
 
 This dataset contains the polygon boundaries for all 35 Nashville council districts, which we use to:
 - Create district-level performance analysis
