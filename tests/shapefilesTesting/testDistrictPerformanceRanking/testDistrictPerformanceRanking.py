@@ -11,9 +11,9 @@ import geopandas as gpd
 from unittest.mock import Mock, patch, MagicMock
 import io
 
-# Add src and shapefileGenerators to path
+# Add src and geoPackageGenerators to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..', 'src'))
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..', 'shapefileGenerators', 'districtPerformanceRanking'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..', 'geoPackageGenerators', 'districtPerformanceRanking'))
 
 from districtPerformanceRanking import DistrictPerformanceRankingGenerator
 
