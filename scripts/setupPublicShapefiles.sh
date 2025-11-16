@@ -1,12 +1,12 @@
 #!/bin/bash
-# Script to safely enable public read access for shapefiles folder only
+# Script to safely enable public read access for GeoPackages folder only
 
 BUCKET_NAME="nashville311-gis-analysis-data"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 POLICY_FILE="$PROJECT_ROOT/terraform/public-shapefiles-policy.json"
 
-echo "🔒 Setting up secure public access for shapefiles..."
+echo "🔒 Setting up secure public access for GeoPackages..."
 echo "=================================================="
 echo ""
 
@@ -44,7 +44,7 @@ echo ""
 echo "Step 4: Testing public access..."
 echo ""
 echo "Test URL format:"
-echo "  https://${BUCKET_NAME}.s3.amazonaws.com/gpkg-public/districtPerformanceRanking/districtPerformanceRanking.shp"
+echo "  https://${BUCKET_NAME}.s3.amazonaws.com/gpkg-public/districtPerformanceRanking/districtPerformanceRanking.gpkg"
 echo ""
 echo "⚠️  IMPORTANT SECURITY NOTES:"
 echo "  1. Monitor CloudWatch for unusual download patterns"
@@ -52,5 +52,5 @@ echo "  2. Set up billing alerts in AWS Console"
 echo "  3. Only put public data in gpkg-public/"
 echo "  4. Keep processed-data/ and boundaries/ private"
 echo ""
-echo "✅ Setup complete! Shapefiles are now publicly accessible (read-only)"
+echo "✅ Setup complete! GeoPackages are now publicly accessible (read-only)"
 

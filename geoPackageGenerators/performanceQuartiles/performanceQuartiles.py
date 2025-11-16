@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Performance Quartiles Shapefile Generator
+Performance Quartiles GeoPackage Generator
 
 Creates a GeoPackage grouping Nashville council districts into performance quartiles
 based on median response time. Uses Parquet data from S3 and district boundaries 
@@ -25,7 +25,7 @@ from nashvilleGis import NashvilleDataFetcher, NashvilleConfig
 
 
 class PerformanceQuartilesGenerator:
-    """Generator for district performance quartiles shapefiles."""
+    """Generator for district performance quartiles GeoPackages."""
     
     def __init__(self, bucketName: Optional[str] = None):
         """Initialize the generator."""
@@ -152,9 +152,9 @@ class PerformanceQuartilesGenerator:
         """Load and transform district boundaries from S3."""
         import tempfile
         
-        # Download shapefile components from S3 to temporary directory
+        # Download boundary file components from S3 to temporary directory
         with tempfile.TemporaryDirectory() as tempDir:
-            # Download all shapefile components
+            # Download all boundary file components
             shapefileExtensions = ['.shp', '.shx', '.dbf', '.prj', '.cpg', '.shp.xml']
             baseName = '2022_Council_Districts'
             
@@ -169,7 +169,7 @@ class PerformanceQuartilesGenerator:
                         continue
                     raise FileNotFoundError(f"Could not download {s3Key}: {e}")
             
-            # Load the shapefile
+            # Load the boundary file
             shapefilePath = os.path.join(tempDir, f'{baseName}.shp')
             boundaries = gpd.read_file(shapefilePath)
         

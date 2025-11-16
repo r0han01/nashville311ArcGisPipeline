@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Tests for District Performance Ranking Shapefile Generator
+Tests for District Performance Ranking GeoPackage Generator
 """
 
 import unittest
@@ -157,7 +157,7 @@ class TestDistrictPerformanceRankingGenerator(unittest.TestCase):
         with patch.object(self.generator.s3Client, 'download_file') as mockDownload:
             boundaries = self.generator.loadDistrictBoundaries()
             
-            # Verify S3 download was called for each shapefile component
+            # Verify S3 download was called for each boundary file component
             expectedCalls = 6  # .shp, .shx, .dbf, .prj, .cpg, .shp.xml
             self.assertEqual(mockDownload.call_count, expectedCalls)
             
@@ -182,7 +182,7 @@ class TestDistrictPerformanceRankingGenerator(unittest.TestCase):
     @patch('os.path.exists')
     @patch('os.remove')
     def testCreateShapefile(self, mockRemove, mockExists, mockMakedirs, mockGdf, mockLoadBoundaries, mockLoadData):
-        """Test complete shapefile creation process."""
+        """Test complete GeoPackage creation process."""
         # Mock data loading
         mockLoadData.return_value = self.sampleData
         
@@ -203,7 +203,7 @@ class TestDistrictPerformanceRankingGenerator(unittest.TestCase):
         mockGdfInstance.rename.return_value = mockGdfInstance
         mockGdf.return_value = mockGdfInstance
         
-        # Test shapefile creation
+        # Test GeoPackage creation
         outputPath = self.generator.createShapefile()
         
         # Verify calls

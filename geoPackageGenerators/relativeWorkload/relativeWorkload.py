@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Relative Workload Shapefile Generator
+Relative Workload GeoPackage Generator
 
 Creates a GeoPackage ranking Nashville council districts by relative workload
 (requests per square mile/km). Uses Parquet data from S3 and district boundaries 
@@ -26,7 +26,7 @@ from nashvilleGis import NashvilleDataFetcher, NashvilleConfig
 
 
 class RelativeWorkloadGenerator:
-    """Generator for district relative workload shapefiles."""
+    """Generator for district relative workload GeoPackages."""
     
     def __init__(self, bucketName: Optional[str] = None):
         """Initialize the generator."""
@@ -144,9 +144,9 @@ class RelativeWorkloadGenerator:
         Load and transform district boundaries from S3.
         Calculates area for each district polygon.
         """
-        # Download shapefile components from S3 to temporary directory
+        # Download boundary file components from S3 to temporary directory
         with tempfile.TemporaryDirectory() as tempDir:
-            # Download all shapefile components
+            # Download all boundary file components
             shapefileExtensions = ['.shp', '.shx', '.dbf', '.prj', '.cpg', '.shp.xml']
             baseName = '2022_Council_Districts'
             
@@ -161,7 +161,7 @@ class RelativeWorkloadGenerator:
                         continue
                     raise FileNotFoundError(f"Could not download {s3Key}: {e}")
             
-            # Load the shapefile
+            # Load the boundary file
             shapefilePath = os.path.join(tempDir, f'{baseName}.shp')
             boundaries = gpd.read_file(shapefilePath)
         

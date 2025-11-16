@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-District Performance Ranking Shapefile Generator
+District Performance Ranking GeoPackage Generator
 
-Creates a shapefile ranking Nashville council districts by response time performance.
+Creates a GeoPackage ranking Nashville council districts by response time performance.
 Uses Parquet data from S3 and district boundaries to generate polygon-based performance analysis.
 """
 
@@ -23,7 +23,7 @@ from nashvilleGis import NashvilleDataFetcher, NashvilleConfig
 
 
 class DistrictPerformanceRankingGenerator:
-    """Generator for district performance ranking shapefiles."""
+    """Generator for district performance ranking GeoPackages."""
     
     def __init__(self, bucketName: Optional[str] = None):
         """Initialize the generator."""
@@ -114,9 +114,9 @@ class DistrictPerformanceRankingGenerator:
         """Load and transform district boundaries from S3."""
         import tempfile
         
-        # Download shapefile components from S3 to temporary directory
+        # Download boundary file components from S3 to temporary directory
         with tempfile.TemporaryDirectory() as tempDir:
-            # Download all shapefile components
+            # Download all boundary file components
             shapefileExtensions = ['.shp', '.shx', '.dbf', '.prj', '.cpg', '.shp.xml']
             baseName = '2022_Council_Districts'
             
@@ -131,7 +131,7 @@ class DistrictPerformanceRankingGenerator:
                         continue
                     raise FileNotFoundError(f"Could not download {s3Key}: {e}")
             
-            # Load the shapefile
+            # Load the boundary file
             shapefilePath = os.path.join(tempDir, f'{baseName}.shp')
             boundaries = gpd.read_file(shapefilePath)
         
@@ -207,7 +207,7 @@ class DistrictPerformanceRankingGenerator:
     
     def createShapefile(self, fileName: Optional[str] = None) -> Dict[str, Any]:
         """
-        Create the district performance ranking shapefile and upload to S3.
+        Create the district performance ranking GeoPackage and upload to S3.
         
         Returns:
             Dictionary with S3 URLs and summary information
@@ -288,7 +288,7 @@ class DistrictPerformanceRankingGenerator:
 
 
 def main():
-    """Main function to generate district performance ranking shapefile."""
+    """Main function to generate district performance ranking GeoPackage."""
     try:
         generator = DistrictPerformanceRankingGenerator()
         result = generator.createShapefile()

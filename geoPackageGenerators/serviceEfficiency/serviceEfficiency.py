@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Service Efficiency Shapefile Generator
+Service Efficiency GeoPackage Generator
 
 Creates a GeoPackage ranking Nashville council districts by service efficiency
 (fastest response relative to workload). Combines response time and workload
@@ -26,7 +26,7 @@ from nashvilleGis import NashvilleDataFetcher, NashvilleConfig
 
 
 class ServiceEfficiencyGenerator:
-    """Generator for district service efficiency shapefiles."""
+    """Generator for district service efficiency GeoPackages."""
     
     def __init__(self, bucketName: Optional[str] = None):
         """Initialize the generator."""
@@ -270,9 +270,9 @@ class ServiceEfficiencyGenerator:
         Load and transform district boundaries from S3.
         Calculates area for each district polygon.
         """
-        # Download shapefile components from S3 to temporary directory
+        # Download boundary file components from S3 to temporary directory
         with tempfile.TemporaryDirectory() as tempDir:
-            # Download all shapefile components
+            # Download all boundary file components
             shapefileExtensions = ['.shp', '.shx', '.dbf', '.prj', '.cpg', '.shp.xml']
             baseName = '2022_Council_Districts'
             
@@ -287,7 +287,7 @@ class ServiceEfficiencyGenerator:
                         continue
                     raise FileNotFoundError(f"Could not download {s3Key}: {e}")
             
-            # Load the shapefile
+            # Load the boundary file
             shapefilePath = os.path.join(tempDir, f'{baseName}.shp')
             boundaries = gpd.read_file(shapefilePath)
         

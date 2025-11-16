@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Request Density Zones Shapefile Generator
+Request Density Zones GeoPackage Generator
 
 Creates a GeoPackage with hexagonal density zones showing request density
 across Nashville. Uses pure metrics (rank, percentile) with no categorization.
@@ -28,7 +28,7 @@ from nashvilleGis import NashvilleDataFetcher, NashvilleConfig
 
 
 class RequestDensityZonesGenerator:
-    """Generator for request density zones shapefiles."""
+    """Generator for request density zones GeoPackages."""
     
     def __init__(self, bucketName: Optional[str] = None):
         """Initialize the generator."""

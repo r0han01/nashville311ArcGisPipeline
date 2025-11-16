@@ -12,7 +12,7 @@ We're using the **Council Districts** dataset from the [Nashville Open Data Port
 
 This dataset contains the polygon boundaries for all 35 Nashville council districts, which we use to:
 - Create district-level performance analysis
-- Generate polygon-based shapefiles for ArcGIS Pro
+- Generate polygon-based GeoPackages for ArcGIS Pro
 - Merge service request data with geographic boundaries
 
 ## Storage
@@ -34,5 +34,5 @@ The dataset is updated by the city, so this is the authoritative source for coun
 
 ## Files in This Directory
 
-This directory is kept for reference, but the actual files used in processing are stored in S3. The Python code automatically downloads from S3 when generating shapefiles.
+This directory is kept for reference, but the actual files used in processing are stored in S3. The Python code automatically downloads from S3 when generating GeoPackages.
 

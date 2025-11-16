@@ -37,7 +37,7 @@ The latest processed file contains:
 
 ## How It's Used
 
-The processed Parquet files are automatically loaded by our shapefile generators to create GIS visualizations. You don't need to download or manage these files manually—the Python scripts handle everything.
+The processed Parquet files are automatically loaded by our GeoPackage generators to create GIS visualizations. You don't need to download or manage these files manually—the Python scripts handle everything.
 
 ## Running the Pipeline
 
