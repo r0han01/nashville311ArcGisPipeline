@@ -4,7 +4,7 @@
 BUCKET_NAME="nashville311-gis-analysis-data"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-POLICY_FILE="$PROJECT_ROOT/terraform/public-shapefiles-policy.json"
+POLICY_FILE="$PROJECT_ROOT/terraform/public-geopackages-policy.json"
 
 echo "🔒 Setting up secure public access for GeoPackages..."
 echo "=================================================="
