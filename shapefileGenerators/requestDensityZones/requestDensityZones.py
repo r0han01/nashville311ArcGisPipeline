@@ -110,8 +110,9 @@ class RequestDensityZonesGenerator:
         
         # Calculate target number of zones dynamically
         total_points = len(points_gdf)
-        # Adaptive: More points = more zones (but reasonable range)
-        target_zones = max(50, min(300, int(total_points / 200)))
+        # Adaptive: More points = more zones (smaller hexagons for better granularity)
+        # Create more zones for better detail (aim for ~300-500 zones with data)
+        target_zones = max(300, min(800, int(total_points / 100)))
         
         # Calculate optimal hexagon size (radius in degrees)
         # Hexagon area formula: area = (3 * sqrt(3) / 2) * radius^2
@@ -358,6 +359,21 @@ class RequestDensityZonesGenerator:
         # Calculate density metrics (pure metrics - no categories)
         zones = self.calculateDensityMetrics(hex_grid, points_gdf)
         
+        # Filter out empty zones (only keep zones with requests)
+        # This makes the visualization more meaningful
+        zones_with_requests = zones[zones['totalRequests'] > 0].copy()
+        
+        # Recalculate rank and percentile after filtering (relative to zones with data)
+        zones_with_requests = zones_with_requests.sort_values('requests_per_sq_mile', ascending=False).reset_index(drop=True)
+        zones_with_requests['density_rank'] = zones_with_requests.index + 1
+        
+        # Recalculate percentile (0-100, relative to zones with data)
+        n = len(zones_with_requests)
+        if n > 1:
+            zones_with_requests['density_percentile'] = ((n - zones_with_requests['density_rank']) / (n - 1) * 100).round().astype('Int64')
+        else:
+            zones_with_requests['density_percentile'] = 100
+        
         # Select and rename columns with descriptive names
         cols = [
             'Zone_ID', 'totalRequests', 'Area_Square_Miles', 'Area_Square_Kilometers',
@@ -365,7 +381,7 @@ class RequestDensityZonesGenerator:
             'density_rank', 'density_percentile', 'geometry'
         ]
         
-        zones_final = zones[cols].rename(columns={
+        zones_final = zones_with_requests[cols].rename(columns={
             'Zone_ID': 'Zone ID',
             'totalRequests': 'Total Requests',
             'Area_Square_Miles': 'Zone Area Square Miles',
@@ -379,7 +395,6 @@ class RequestDensityZonesGenerator:
         # Get summary stats before writing
         total_zones = len(zones_final)
         total_requests = zones_final['Total Requests'].sum()
-        zones_with_requests = len(zones_final[zones_final['Total Requests'] > 0])
         
         # Get highest and lowest density zones
         if len(zones_final) > 0:
@@ -431,13 +446,12 @@ def main():
         
         print(f"\nSummary:")
         summary = result['summary']
-        print(f"  Total Zones: {summary['total_zones']}")
-        print(f"  Zones with Requests: {summary['zones_with_requests']}")
+        print(f"  Zones with Requests: {summary['total_zones']} (empty zones filtered out)")
         print(f"  Request Points: {summary['request_points']:,}")
         print(f"  Total Requests: {summary['total_requests']:,}")
-        print(f"\n  Highest Density: {summary['highest_density_value']:.2f} requests/sq mile")
-        print(f"  Lowest Density: {summary['lowest_density_value']:.2f} requests/sq mile")
-        print(f"  (Pure metrics approach - rank and percentile only, no categories)")
+        print(f"\n  Highest Density: {summary['highest_density_value']:.2f} requests/sq mile (Rank 1)")
+        print(f"  Lowest Density: {summary['lowest_density_value']:.2f} requests/sq mile (Rank {summary['total_zones']})")
+        print(f"  (Pure metrics approach - only zones with requests included, no empty zones)")
         
         print(f"\n✅ Ready for ArcGIS Pro!")
         print(f"   GeoPackage URL: {result['mainUrl']}")

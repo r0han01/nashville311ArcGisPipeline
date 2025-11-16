@@ -106,25 +106,45 @@ class PerformanceQuartilesGenerator:
         # This is fully dynamic - quartile boundaries change with data distribution
         n = len(metrics)
         if n >= 4:
-            # Use qcut for equal-sized quartiles
+            # Use qcut for equal-sized quartiles (returns intervals)
             metrics['Performance_Quartile'] = pd.qcut(
                 metrics['medianResponseHours'],
                 q=4,
                 labels=['Q1', 'Q2', 'Q3', 'Q4'],
                 duplicates='drop'  # Handle cases where multiple districts have same median
             )
+            
+            # Calculate dynamic labels based on actual data (no hardcoding)
+            # Calculate median response time for each quartile
+            quartile_medians = {}
+            quartile_boundaries = {}
+            
+            for quartile in ['Q1', 'Q2', 'Q3', 'Q4']:
+                quartile_data = metrics[metrics['Performance_Quartile'] == quartile]['medianResponseHours']
+                if len(quartile_data) > 0:
+                    quartile_medians[quartile] = quartile_data.median()
+                    quartile_boundaries[quartile] = {
+                        'min': quartile_data.min(),
+                        'max': quartile_data.max()
+                    }
+            
+            # Calculate percentile ranges dynamically
+            percentile_ranges = {
+                'Q1': '0-25th',
+                'Q2': '25-50th',
+                'Q3': '50-75th',
+                'Q4': '75-100th'
+            }
+            
+            # Create dynamic labels: "X-Yth Percentile (Z hrs median)"
+            # No hardcoded interpretations - purely data-driven
+            metrics['Quartile_Label'] = metrics['Performance_Quartile'].apply(
+                lambda q: f"{percentile_ranges.get(q, 'Unknown')} Percentile ({quartile_medians.get(q, 0):.1f} hrs median)" if pd.notna(q) else 'Unknown'
+            )
         else:
             # If fewer than 4 districts, assign all to Q2 (middle quartile)
             metrics['Performance_Quartile'] = 'Q2'
-        
-        # Map quartiles to descriptive labels
-        quartileLabels = {
-            'Q1': 'Top 25%',
-            'Q2': 'Good',
-            'Q3': 'Average',
-            'Q4': 'Needs Improvement'
-        }
-        metrics['Quartile_Label'] = metrics['Performance_Quartile'].map(quartileLabels)
+            metrics['Quartile_Label'] = '25-50th Percentile'
         
         return metrics
     
@@ -245,33 +265,39 @@ class PerformanceQuartilesGenerator:
         
         points_gdf = gpd.GeoDataFrame(points_df[available_cols], crs='EPSG:4326')
         
-        # Rename columns to Title Case for better readability in ArcGIS Pro
+        # Rename columns to camelCase for better ArcGIS Pro compatibility
         rename_map = {
-            'Request__': 'Request ID',
-            'Request_Type': 'Request Type',
-            'Subrequest_Type': 'Subrequest Type',
-            'Status': 'Status',
-            'Address': 'Address',
-            'City': 'City',
-            'Council_District': 'Council District',
-            'ZIP': 'ZIP Code',
-            'Date_Time_Opened': 'Date Time Opened',
-            'Date_Time_Closed': 'Date Time Closed',
-            'Response_Hours': 'Response Time Hours'
+            'Request__': 'requestId',
+            'Request_Type': 'requestType',
+            'Subrequest_Type': 'subrequestType',
+            'Status': 'status',
+            'Address': 'address',
+            'City': 'city',
+            'Council_District': 'councilDistrict',
+            'ZIP': 'zipCode',
+            'Date_Time_Opened': 'dateTimeOpened',
+            'Date_Time_Closed': 'dateTimeClosed',
+            'Response_Hours': 'responseTimeHours'
         }
         
         # Only rename columns that exist
         rename_map = {k: v for k, v in rename_map.items() if k in points_gdf.columns}
         points_gdf = points_gdf.rename(columns=rename_map)
         
+        # Ensure numeric fields are explicitly typed
+        if 'councilDistrict' in points_gdf.columns:
+            points_gdf['councilDistrict'] = pd.to_numeric(points_gdf['councilDistrict'], errors='coerce').astype('Int64')
+        if 'responseTimeHours' in points_gdf.columns:
+            points_gdf['responseTimeHours'] = points_gdf['responseTimeHours'].astype('float64')
+        
         # Convert timestamp columns to readable dates if they exist
-        if 'Date Time Opened' in points_gdf.columns:
-            points_gdf['Date Time Opened'] = pd.to_datetime(
-                points_gdf['Date Time Opened'], unit='ms', errors='coerce'
+        if 'dateTimeOpened' in points_gdf.columns:
+            points_gdf['dateTimeOpened'] = pd.to_datetime(
+                points_gdf['dateTimeOpened'], unit='ms', errors='coerce'
             )
-        if 'Date Time Closed' in points_gdf.columns:
-            points_gdf['Date Time Closed'] = pd.to_datetime(
-                points_gdf['Date Time Closed'], unit='ms', errors='coerce'
+        if 'dateTimeClosed' in points_gdf.columns:
+            points_gdf['dateTimeClosed'] = pd.to_datetime(
+                points_gdf['dateTimeClosed'], unit='ms', errors='coerce'
             )
         
         return points_gdf
@@ -336,28 +362,36 @@ class PerformanceQuartilesGenerator:
             cols.insert(insert_index, 'Representative_Name')
         
         gdf = gdf[cols].rename(columns={
-            'District_ID': 'District ID',
-            'District_Name': 'District Name',
-            'Representative_Name': 'Representative Name',
-            'totalRequests': 'Total Requests From District',
-            'closedRequests': 'Closed Requests From District', 
-            'avgResponseHours': 'Average Response Time Hours',
-            'medianResponseHours': 'Median Response Time Hours',
-            'Performance_Quartile': 'Performance Quartile',
-            'Quartile_Label': 'Quartile Label'
+            'District_ID': 'districtId',
+            'District_Name': 'districtName',
+            'Representative_Name': 'representativeName',
+            'totalRequests': 'totalRequestsFromDistrict',
+            'closedRequests': 'closedRequestsFromDistrict', 
+            'avgResponseHours': 'averageResponseTimeHours',
+            'medianResponseHours': 'medianResponseTimeHours',
+            'Performance_Quartile': 'performanceQuartile',
+            'Quartile_Label': 'quartileLabel'
         })
         
+        # Ensure numeric fields are explicitly typed before writing to GeoPackage
+        gdf['districtId'] = gdf['districtId'].astype('int64')
+        gdf['totalRequestsFromDistrict'] = gdf['totalRequestsFromDistrict'].astype('int64')
+        gdf['closedRequestsFromDistrict'] = gdf['closedRequestsFromDistrict'].astype('int64')
+        gdf['averageResponseTimeHours'] = gdf['averageResponseTimeHours'].astype('float64')
+        gdf['medianResponseTimeHours'] = gdf['medianResponseTimeHours'].astype('float64')
+        
         # Get summary stats before writing
-        quartile_counts = gdf['Performance Quartile'].value_counts().sort_index().to_dict()
+        quartile_counts = gdf['performanceQuartile'].value_counts().sort_index().to_dict()
         
         # Get Q1 and Q4 stats for summary
-        q1_districts = gdf[gdf['Performance Quartile'] == 'Q1']
-        q4_districts = gdf[gdf['Performance Quartile'] == 'Q4']
+        q1_districts = gdf[gdf['performanceQuartile'] == 'Q1']
+        q4_districts = gdf[gdf['performanceQuartile'] == 'Q4']
         
         q1_count = len(q1_districts)
         q4_count = len(q4_districts)
-        q1_avg_hours = q1_districts['Median Response Time Hours'].mean() if q1_count > 0 else 0
-        q4_avg_hours = q4_districts['Median Response Time Hours'].mean() if q4_count > 0 else 0
+        # Use median instead of mean for summary stats (more robust)
+        q1_median_hours = q1_districts['medianResponseTimeHours'].median() if q1_count > 0 else 0
+        q4_median_hours = q4_districts['medianResponseTimeHours'].median() if q4_count > 0 else 0
         
         # Create request points layer
         points_gdf = self.createRequestPointsLayer(df)
@@ -384,9 +418,9 @@ class PerformanceQuartilesGenerator:
                 'request_points': len(points_gdf),
                 'quartile_counts': quartile_counts,
                 'q1_count': q1_count,
-                'q1_avg_hours': float(q1_avg_hours),
+                'q1_median_hours': float(q1_median_hours),
                 'q4_count': q4_count,
-                'q4_avg_hours': float(q4_avg_hours)
+                'q4_median_hours': float(q4_median_hours)
             }
         }
 
@@ -409,8 +443,8 @@ def main():
         print(f"  Quartile Distribution:")
         for quartile, count in sorted(summary['quartile_counts'].items()):
             print(f"    {quartile}: {count} districts")
-        print(f"\n  Top 25% (Q1): {summary['q1_count']} districts (avg {summary['q1_avg_hours']:.2f} hrs median)")
-        print(f"  Needs Improvement (Q4): {summary['q4_count']} districts (avg {summary['q4_avg_hours']:.2f} hrs median)")
+        print(f"\n  Top 25% (Q1): {summary['q1_count']} districts (median {summary['q1_median_hours']:.2f} hrs)")
+        print(f"  Needs Improvement (Q4): {summary['q4_count']} districts (median {summary['q4_median_hours']:.2f} hrs)")
         print(f"  (Quartiles based on Median Response Time - fully dynamic, adapts to data)")
         
         print(f"\n✅ Ready for ArcGIS Pro!")

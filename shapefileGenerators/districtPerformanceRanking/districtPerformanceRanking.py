@@ -237,22 +237,31 @@ class DistrictPerformanceRankingGenerator:
             cols.insert(insert_index, 'Representative_Name')
         
         gdf = gdf[cols].rename(columns={
-            'District_ID': 'District ID',
-            'District_Name': 'District Name',
-            'Representative_Name': 'Representative Name',
-            'totalRequests': 'Total Requests From District',
-            'closedRequests': 'Closed Requests From District', 
-            'avgResponseHours': 'Average Response Time Hours',
-            'medianResponseHours': 'Median Response Time Hours',
-            'Performance_Rank_By_Median': 'Performance Rank Based On Median Response Time',
-            'Percentile_Rank': 'Percentile Rank'
+            'District_ID': 'districtId',
+            'District_Name': 'districtName',
+            'Representative_Name': 'representativeName',
+            'totalRequests': 'totalRequestsFromDistrict',
+            'closedRequests': 'closedRequestsFromDistrict', 
+            'avgResponseHours': 'averageResponseTimeHours',
+            'medianResponseHours': 'medianResponseTimeHours',
+            'Performance_Rank_By_Median': 'performanceRankBasedOnMedianResponseTime',
+            'Percentile_Rank': 'percentileRank'
         })
         
+        # Ensure numeric fields are explicitly typed before writing to GeoPackage
+        gdf['performanceRankBasedOnMedianResponseTime'] = gdf['performanceRankBasedOnMedianResponseTime'].astype('int64')
+        gdf['percentileRank'] = gdf['percentileRank'].astype('Int64').fillna(0).astype('int64')
+        gdf['districtId'] = gdf['districtId'].astype('int64')
+        gdf['totalRequestsFromDistrict'] = gdf['totalRequestsFromDistrict'].astype('int64')
+        gdf['closedRequestsFromDistrict'] = gdf['closedRequestsFromDistrict'].astype('int64')
+        gdf['averageResponseTimeHours'] = gdf['averageResponseTimeHours'].astype('float64')
+        gdf['medianResponseTimeHours'] = gdf['medianResponseTimeHours'].astype('float64')
+        
         # Get summary stats before writing (using median-based ranking)
-        bestDistrict = gdf.loc[gdf['Performance Rank Based On Median Response Time'] == 1, 'District ID'].iloc[0]
-        bestMedianHours = gdf.loc[gdf['Performance Rank Based On Median Response Time'] == 1, 'Median Response Time Hours'].iloc[0]
-        worstDistrict = gdf.loc[gdf['Performance Rank Based On Median Response Time'] == gdf['Performance Rank Based On Median Response Time'].max(), 'District ID'].iloc[0]
-        worstMedianHours = gdf.loc[gdf['Performance Rank Based On Median Response Time'] == gdf['Performance Rank Based On Median Response Time'].max(), 'Median Response Time Hours'].iloc[0]
+        bestDistrict = gdf.loc[gdf['performanceRankBasedOnMedianResponseTime'] == 1, 'districtId'].iloc[0]
+        bestMedianHours = gdf.loc[gdf['performanceRankBasedOnMedianResponseTime'] == 1, 'medianResponseTimeHours'].iloc[0]
+        worstDistrict = gdf.loc[gdf['performanceRankBasedOnMedianResponseTime'] == gdf['performanceRankBasedOnMedianResponseTime'].max(), 'districtId'].iloc[0]
+        worstMedianHours = gdf.loc[gdf['performanceRankBasedOnMedianResponseTime'] == gdf['performanceRankBasedOnMedianResponseTime'].max(), 'medianResponseTimeHours'].iloc[0]
         
         # Create GeoPackage in temporary directory
         with tempfile.TemporaryDirectory() as tempDir:
