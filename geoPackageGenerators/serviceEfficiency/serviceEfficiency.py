@@ -351,12 +351,14 @@ class ServiceEfficiencyGenerator:
         
         return boundaries
     
-    def createRequestPointsLayer(self, df: pd.DataFrame) -> gpd.GeoDataFrame:
+    def createRequestPointsLayer(self, df: pd.DataFrame, metrics: Optional[pd.DataFrame] = None) -> gpd.GeoDataFrame:
         """
         Create a GeoDataFrame of request points from the data.
+        Links each request to its district's efficiency metrics.
         
         Args:
             df: DataFrame with request data
+            metrics: DataFrame with district efficiency metrics (optional)
             
         Returns:
             GeoDataFrame with Point geometries and request attributes
@@ -371,7 +373,7 @@ class ServiceEfficiencyGenerator:
         points_df = df[df['Latitude'].notna() & df['Longitude'].notna()].copy()
         
         # Calculate response time for closed requests
-        points_df['Response_Hours'] = None
+        points_df['responseTimeHours'] = None
         closed_mask = (
             (points_df['Status'] == 'Closed') &
             points_df['Date_Time_Opened'].notna() &
@@ -381,18 +383,18 @@ class ServiceEfficiencyGenerator:
         if closed_mask.any():
             opened = pd.to_datetime(points_df.loc[closed_mask, 'Date_Time_Opened'], unit='ms', errors='coerce')
             closed = pd.to_datetime(points_df.loc[closed_mask, 'Date_Time_Closed'], unit='ms', errors='coerce')
-            points_df.loc[closed_mask, 'Response_Hours'] = (closed - opened).dt.total_seconds() / 3600.0
+            points_df.loc[closed_mask, 'responseTimeHours'] = (closed - opened).dt.total_seconds() / 3600.0
         
         # Create Point geometries from coordinates
         points_df['geometry'] = points_df.apply(
             lambda row: Point(row['Longitude'], row['Latitude']), axis=1
         )
         
-        # Select and rename columns with descriptive, Title Case names
+        # Select base columns
         cols_to_include = [
             'Request__', 'Request_Type', 'Subrequest_Type', 'Status',
             'Address', 'City', 'Council_District', 'ZIP',
-            'Date_Time_Opened', 'Date_Time_Closed', 'Response_Hours'
+            'Date_Time_Opened', 'Date_Time_Closed', 'responseTimeHours'
         ]
         
         # Only include columns that exist
@@ -401,33 +403,115 @@ class ServiceEfficiencyGenerator:
         
         points_gdf = gpd.GeoDataFrame(points_df[available_cols], crs='EPSG:4326')
         
-        # Rename columns to Title Case for better readability in ArcGIS Pro
-        rename_map = {
-            'Request__': 'Request ID',
-            'Request_Type': 'Request Type',
-            'Subrequest_Type': 'Subrequest Type',
-            'Status': 'Status',
-            'Address': 'Address',
-            'City': 'City',
-            'Council_District': 'Council District',
-            'ZIP': 'ZIP Code',
-            'Date_Time_Opened': 'Date Time Opened',
-            'Date_Time_Closed': 'Date Time Closed',
-            'Response_Hours': 'Response Time Hours'
+        # Link each request to its district's efficiency metrics (if metrics provided)
+        if metrics is not None and 'District_ID' in metrics.columns:
+            # Prepare district metrics for merging (only key fields that exist)
+            district_metric_cols = ['District_ID']
+            optional_cols = [
+                'efficiency_quartile', 'efficiency_percentile', 
+                'efficiency_rank', 'efficiency_score', 'efficiency_ratio',
+                'medianResponseHours', 'response_time_ratio'
+            ]
+            
+            for col in optional_cols:
+                if col in metrics.columns:
+                    district_metric_cols.append(col)
+            
+            district_metrics = metrics[district_metric_cols].copy()
+            
+            # Merge district metrics into points based on council district
+            points_df['districtInt'] = pd.to_numeric(points_df['Council_District'], errors='coerce').astype('Int64')
+            points_gdf['districtInt'] = pd.to_numeric(points_gdf['Council_District'], errors='coerce').astype('Int64')
+            
+            points_gdf = points_gdf.merge(
+                district_metrics,
+                left_on='districtInt',
+                right_on='District_ID',
+                how='left'
+            )
+            
+            # Rename merged columns to camelCase (only rename if columns exist)
+            rename_map = {}
+            if 'efficiency_quartile' in points_gdf.columns:
+                rename_map['efficiency_quartile'] = 'districtEfficiencyQuartile'
+            if 'efficiency_percentile' in points_gdf.columns:
+                rename_map['efficiency_percentile'] = 'districtEfficiencyPercentile'
+            if 'efficiency_rank' in points_gdf.columns:
+                rename_map['efficiency_rank'] = 'districtEfficiencyRank'
+            if 'efficiency_score' in points_gdf.columns:
+                rename_map['efficiency_score'] = 'districtEfficiencyScore'
+            if 'efficiency_ratio' in points_gdf.columns:
+                rename_map['efficiency_ratio'] = 'districtEfficiencyRatio'
+            if 'medianResponseHours' in points_gdf.columns:
+                rename_map['medianResponseHours'] = 'districtMedianResponseHours'
+            if 'response_time_ratio' in points_gdf.columns:
+                rename_map['response_time_ratio'] = 'districtResponseTimeRatio'
+            
+            if rename_map:
+                points_gdf = points_gdf.rename(columns=rename_map)
+            
+            # Drop the District_ID column from merge (we already have councilDistrict)
+            if 'District_ID' in points_gdf.columns:
+                points_gdf = points_gdf.drop(columns=['District_ID'])
+            if 'districtInt' in points_gdf.columns:
+                points_gdf = points_gdf.drop(columns=['districtInt'])
+            
+            # Add comparison fields
+            if 'responseTimeHours' in points_gdf.columns and 'districtMedianResponseHours' in points_gdf.columns:
+                def compare_to_district_median(row):
+                    if pd.isna(row['responseTimeHours']) or pd.isna(row['districtMedianResponseHours']):
+                        return None
+                    if row['responseTimeHours'] > row['districtMedianResponseHours']:
+                        return 'Above District Median'
+                    else:
+                        return 'Below District Median'
+                
+                points_gdf['responseTimeVsDistrictMedian'] = points_gdf.apply(
+                    compare_to_district_median, axis=1
+                )
+            
+            # Add days since opened (temporal analysis)
+            if 'Date_Time_Opened' in points_gdf.columns:
+                now = pd.Timestamp.now()
+                points_gdf['daysSinceOpened'] = (now - pd.to_datetime(points_gdf['Date_Time_Opened'], unit='ms', errors='coerce')).dt.total_seconds() / 86400.0
+                points_gdf['daysSinceOpened'] = points_gdf['daysSinceOpened'].round(1)
+            
+            # Type casting for new fields
+            if 'districtEfficiencyPercentile' in points_gdf.columns:
+                points_gdf['districtEfficiencyPercentile'] = points_gdf['districtEfficiencyPercentile'].astype('float64')
+            if 'districtEfficiencyScore' in points_gdf.columns:
+                points_gdf['districtEfficiencyScore'] = points_gdf['districtEfficiencyScore'].astype('float64')
+            if 'districtMedianResponseHours' in points_gdf.columns:
+                points_gdf['districtMedianResponseHours'] = points_gdf['districtMedianResponseHours'].astype('float64')
+            if 'daysSinceOpened' in points_gdf.columns:
+                points_gdf['daysSinceOpened'] = points_gdf['daysSinceOpened'].astype('float64')
+        
+        # Rename base columns to camelCase
+        rename_base = {
+            'Request__': 'requestId',
+            'Request_Type': 'requestType',
+            'Subrequest_Type': 'subrequestType',
+            'Status': 'status',
+            'Address': 'address',
+            'City': 'city',
+            'Council_District': 'councilDistrict',
+            'ZIP': 'zipCode',
+            'Date_Time_Opened': 'dateTimeOpened',
+            'Date_Time_Closed': 'dateTimeClosed'
         }
         
         # Only rename columns that exist
-        rename_map = {k: v for k, v in rename_map.items() if k in points_gdf.columns}
-        points_gdf = points_gdf.rename(columns=rename_map)
+        rename_base = {k: v for k, v in rename_base.items() if k in points_gdf.columns}
+        points_gdf = points_gdf.rename(columns=rename_base)
         
         # Convert timestamp columns to readable dates if they exist
-        if 'Date Time Opened' in points_gdf.columns:
-            points_gdf['Date Time Opened'] = pd.to_datetime(
-                points_gdf['Date Time Opened'], unit='ms', errors='coerce'
+        if 'dateTimeOpened' in points_gdf.columns:
+            points_gdf['dateTimeOpened'] = pd.to_datetime(
+                points_gdf['dateTimeOpened'], unit='ms', errors='coerce'
             )
-        if 'Date Time Closed' in points_gdf.columns:
-            points_gdf['Date Time Closed'] = pd.to_datetime(
-                points_gdf['Date Time Closed'], unit='ms', errors='coerce'
+        if 'dateTimeClosed' in points_gdf.columns:
+            points_gdf['dateTimeClosed'] = pd.to_datetime(
+                points_gdf['dateTimeClosed'], unit='ms', errors='coerce'
             )
         
         return points_gdf
@@ -524,27 +608,47 @@ class ServiceEfficiencyGenerator:
             lowest_district_id = 0
             lowest_efficiency_value = 0.0
         
-        # Select only existing columns and rename
+        # Select only existing columns and rename to camelCase
         gdf = gdf[cols].rename(columns={
-            'District_ID': 'District ID',
-            'District_Name': 'District Name',
-            'Representative_Name': 'Representative Name',
-            'medianResponseHours': 'Median Response Time Hours',
-            'response_time_ratio': 'Response Time Ratio To City Average',
-            'city_avg_response_hours': 'City Average Response Time Hours',
-            'requests_per_sq_mile': 'Requests Per Square Mile',
-            'workload_ratio_sq_mi': 'Workload Ratio To City Average',
-            'city_avg_requests_per_sq_mi': 'City Average Requests Per Square Mile',
-            'efficiency_score': 'Efficiency Score',
-            'efficiency_ratio': 'Efficiency Ratio To City Average',
-            'efficiency_rank': 'Efficiency Rank',
-            'efficiency_percentile': 'Efficiency Percentile',
-            'efficiency_quartile': 'Efficiency Quartile',
-            'efficiency_quartile_label': 'Efficiency Quartile Label'
+            'District_ID': 'districtId',
+            'District_Name': 'districtName',
+            'Representative_Name': 'representativeName',
+            'medianResponseHours': 'medianResponseHours',
+            'response_time_ratio': 'responseTimeRatioToCityAverage',
+            'city_avg_response_hours': 'cityAverageResponseHours',
+            'requests_per_sq_mile': 'requestsPerSquareMile',
+            'workload_ratio_sq_mi': 'workloadRatioToCityAverage',
+            'city_avg_requests_per_sq_mi': 'cityAverageRequestsPerSquareMile',
+            'efficiency_score': 'efficiencyScore',
+            'efficiency_ratio': 'efficiencyRatioToCityAverage',
+            'efficiency_rank': 'efficiencyRank',
+            'efficiency_percentile': 'efficiencyPercentile',
+            'efficiency_quartile': 'efficiencyQuartile',
+            'efficiency_quartile_label': 'efficiencyQuartileLabel'
         })
         
-        # Create request points layer
-        points_gdf = self.createRequestPointsLayer(df)
+        # Ensure numeric fields are explicitly typed before writing to GeoPackage
+        if 'districtId' in gdf.columns:
+            gdf['districtId'] = gdf['districtId'].astype('int64')
+        if 'efficiencyRank' in gdf.columns:
+            gdf['efficiencyRank'] = gdf['efficiencyRank'].astype('int64')
+        if 'efficiencyPercentile' in gdf.columns:
+            gdf['efficiencyPercentile'] = gdf['efficiencyPercentile'].astype('float64')
+        if 'efficiencyScore' in gdf.columns:
+            gdf['efficiencyScore'] = gdf['efficiencyScore'].astype('float64')
+        if 'efficiencyRatioToCityAverage' in gdf.columns:
+            gdf['efficiencyRatioToCityAverage'] = gdf['efficiencyRatioToCityAverage'].astype('float64')
+        if 'medianResponseHours' in gdf.columns:
+            gdf['medianResponseHours'] = gdf['medianResponseHours'].astype('float64')
+        if 'responseTimeRatioToCityAverage' in gdf.columns:
+            gdf['responseTimeRatioToCityAverage'] = gdf['responseTimeRatioToCityAverage'].astype('float64')
+        if 'requestsPerSquareMile' in gdf.columns:
+            gdf['requestsPerSquareMile'] = gdf['requestsPerSquareMile'].astype('float64')
+        if 'workloadRatioToCityAverage' in gdf.columns:
+            gdf['workloadRatioToCityAverage'] = gdf['workloadRatioToCityAverage'].astype('float64')
+        
+        # Create request points layer with district metrics linked
+        points_gdf = self.createRequestPointsLayer(df, metrics)
         
         # Create GeoPackage in temporary directory
         with tempfile.TemporaryDirectory() as tempDir:
