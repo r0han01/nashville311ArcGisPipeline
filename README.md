@@ -15,7 +15,10 @@ Concise documentation for the ArcGIS automation project that converts rolling th
   Dataset overview: https://data.nashville.gov/datasets/9fe11d5a413240ed968f5c8d71877944_0/about  
   REST query (GeoJSON): https://services2.arcgis.com/HdTo6HJqh92wn4D8/arcgis/rest/services/hubNashville_(311)_Service_Requests_1/FeatureServer/0/query?outFields=*&where=1%3D1&f=geojson
 - **Alternate/current-year layer:** hubNashville (311) Service Requests – Current Year  
-  Dataset overview: https://data.nashville.gov/datasets/hubnashville-311-service-requests-current-year/about  
+  Dataset overview: https://data.nashville.gov/datasets/hubnashville-311-service-requests-current-year/about
+  ###
+  <img width="1920" height="892" alt="Nashville (311) Service Requests – Current Year" src="https://github.com/user-attachments/assets/e2519776-c22c-4f4a-8bad-18c7100b5072" />
+
   REST query (GeoJSON): https://services2.arcgis.com/HdTo6HJqh92wn4D8/arcgis/rest/services/hubNashville_311_Service_Requests_Current_Year_view/FeatureServer/0/query?outFields=*&where=1%3D1&f=geojson  
   (our fetcher swaps between the full-history and current-year views depending on reporting needs)
 - **Fetcher implementation:** `src/nashvilleGis/dataFetcher.py` uses the endpoints above (see `NashvilleConfig.apiUrl`) to paginate through ArcGIS REST pages, apply rolling three-month filters, and stage the data in Parquet format on S3.
