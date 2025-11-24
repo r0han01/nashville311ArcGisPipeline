@@ -11,12 +11,21 @@ Concise documentation for the ArcGIS automation project that converts rolling th
 
 ## Data source
 
-- **API:** HubNashville Service Requests  
-  https://data.nashville.gov/Public-Services/HubNashville-Service-Requests/9udr-2rbj  
-  (JSON, CSV, and Socrata API supported)
+- **Primary feature layer:** hubNashville (311) Service Requests (2017 – Present)  
+  Dataset overview: https://data.nashville.gov/datasets/9fe11d5a413240ed968f5c8d71877944_0/about  
+  REST query (GeoJSON): https://services2.arcgis.com/HdTo6HJqh92wn4D8/arcgis/rest/services/hubNashville_(311)_Service_Requests_1/FeatureServer/0/query?outFields=*&where=1%3D1&f=geojson
+- **Alternate/current-year layer:** hubNashville (311) Service Requests – Current Year  
+  Dataset overview: https://data.nashville.gov/datasets/hubnashville-311-service-requests-current-year/about  
+  REST query (GeoJSON): https://services2.arcgis.com/HdTo6HJqh92wn4D8/arcgis/rest/services/hubNashville_311_Service_Requests_Current_Year_view/FeatureServer/0/query?outFields=*&where=1%3D1&f=geojson  
+  (our fetcher swaps between the full-history and current-year views depending on reporting needs)
+- **Fetcher implementation:** `src/nashvilleGis/dataFetcher.py` uses the endpoints above (see `NashvilleConfig.apiUrl`) to paginate through ArcGIS REST pages, apply rolling three-month filters, and stage the data in Parquet format on S3.
 - **S3 parquet staging:** `s3://nashville311-gis-analysis-data/processed-data/<timestamp>.parquet`
 - **GeoPackage output prefix:** `s3://nashville311-gis-analysis-data/gpkg-public/<generatorName>/<generatorName>.gpkg`
 - **Current snapshot:** Rolling three months ending 2025‑11‑24 (~49k requests across 35 districts)
+- **Boundary reference:** Council Districts (Current) dataset on the Nashville Open Data Portal  
+  https://data.nashville.gov/datasets/council-districts-current-1/explore  
+  (the API does not ship polygon geometries, so we download this authoritative shapefile and mirror it in S3 for faster automated access)
+- **Socrata mirror:** https://data.nashville.gov/resource/9udr-2rbj.json remains a valid JSON/CSV/SoQL alternative if ArcGIS services are unavailable.
 
 ## How the pipeline runs
 
@@ -28,7 +37,6 @@ Concise documentation for the ArcGIS automation project that converts rolling th
 ## Re-running a generator
 
 ```bash
-cd /home/r0han/personalProjects/arcGIS
 python3 geoPackageGenerators/capacityPlanning/capacityPlanning.py
 ```
 
@@ -47,17 +55,48 @@ To skip uploads entirely, comment out `uploadGeoPackageToS3` inside the generato
 
 | Field | Example | Notes |
 |-------|---------|-------|
-| `Request_ID` | `23-001234` | Primary key |
-| `Request_Type` | `Public Works WO` | High level grouping |
-| `Subrequest_Type` | `Cart Services` | Specific issue |
-| `Status` | `Closed` | Also includes New, Assigned, Pending |
-| `Date_Time_Opened` | `1698710400000` | Epoch milliseconds |
-| `Date_Time_Closed` | `1698796800000` | Epoch milliseconds, null if open |
-| `Council_District` | `5` | Joined to boundary shapefile |
-| `Latitude`,`Longitude` | `36.1678`, `-86.7784` | Used for point geometry |
-| `Address` | `123 MAIN ST` | Cleansed to uppercase |
+| `request_id` | `23-001234` | Primary key |
+| `request_type` | `Public Works WO` | High level grouping |
+| `subrequest_type` | `Cart Services` | Specific issue |
+| `status` | `Closed` | Also includes New, Assigned, Pending |
+| `date_time_opened` | `2023-11-01T08:00:00.000` | ISO timestamp, converted to epoch in parquet |
+| `date_time_closed` | `2023-11-02T08:00:00.000` | Null if still open |
+| `council_district` | `5` | Joined to official boundary shapefile |
+| `latitude`,`longitude` | `36.1678`, `-86.7784` | Point geometry source |
+| `address` | `123 MAIN ST` | Cleaned to uppercase |
+| `service_area` | `Solid Waste` | Operational grouping used in several generators |
 
 All joins and enrichments happen inside the generators so analysts only need the final GeoPackages.
+
+Sample payload snippet from the ArcGIS GeoJSON endpoint:
+
+```json
+{
+  "type": "FeatureCollection",
+  "properties": { "exceededTransferLimit": true },
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [-86.5852091275, 36.0359785075] },
+      "properties": {
+        "OBJECTID": 135128,
+        "GlobalID": "446c7b5b-921f-43b3-a98b-bcae115a62a4",
+        "Status": "Closed",
+        "Request_Type": "Public_Works_WO",
+        "Subrequest_Type": "Dead Animal Pickup",
+        "Additional_Subrequest_Type": "Roadway",
+        "Council_District": 8,
+        "Latitude": 36.035978507533,
+        "Longitude": -86.5852091275156,
+        "Date_Time_Opened": 1757504703000,
+        "Date_Time_Closed": 1757515653000,
+        "ZIP": "37013",
+        "Request__": "1948982"
+      }
+    }
+  ]
+}
+```
 
 ## Key GeoPackages
 
