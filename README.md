@@ -2,6 +2,36 @@
 
 Concise documentation for the ArcGIS automation project that converts rolling three-month HubNashville 311 data into analysis-ready GeoPackages plus step-by-step ArcGIS usage guidance.
 
+## Architecture
+
+```mermaid
+flowchart LR
+    subgraph Sources
+        A1[HubNashville 311<br/>Full History Feature Layer]
+        A2[HubNashville 311<br/>Current-Year Feature Layer]
+        A3[Council Districts<br/>Polygon Dataset]
+    end
+
+    subgraph Pipeline
+        B1[dataFetcher (src/nashvilleGis/dataFetcher.py)]
+        B2[S3 Processed Parquet<br/>s3://nashville311-gis-analysis-data/processed-data/]
+        B3[GeoPackage Generators<br/>geoPackageGenerators/*]
+    end
+
+    subgraph Outputs
+        C1[S3 GeoPackages<br/>s3://.../gpkg-public/*]
+        C2[GIS Analysts<br/>ArcGIS Pro / QGIS / others]
+    end
+
+    A1 -->|ArcGIS REST / GeoJSON| B1
+    A2 -->|ArcGIS REST / GeoJSON| B1
+    B1 -->|Rolling 3-mo parquet| B2
+    B2 -->|Load latest snapshot| B3
+    A3 -->|Boundary mirror| B3
+    B3 -->|District + Request layers| C1
+    C1 -->|Download & import| C2
+```
+
 ## What this repo contains
 
 - Python generators under `geoPackageGenerators/` that pull the latest parquet snapshot from S3, calculate data-driven metrics, and publish `*.gpkg` files with polygon and point layers.
