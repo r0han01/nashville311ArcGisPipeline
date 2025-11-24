@@ -7,20 +7,20 @@ Concise documentation for the ArcGIS automation project that converts rolling th
 ```mermaid
 flowchart LR
     subgraph Sources
-        A1[HubNashville 311<br/>Full History Feature Layer]
-        A2[HubNashville 311<br/>Current-Year Feature Layer]
-        A3[Council Districts<br/>Polygon Dataset]
+        A1["HubNashville 311<br/>Full History Feature Layer"]
+        A2["HubNashville 311<br/>Current-Year Feature Layer"]
+        A3["Council Districts<br/>Polygon Dataset"]
     end
 
     subgraph Pipeline
-        B1[dataFetcher (src/nashvilleGis/dataFetcher.py)]
-        B2[S3 Processed Parquet<br/>s3://nashville311-gis-analysis-data/processed-data/]
-        B3[GeoPackage Generators<br/>geoPackageGenerators/*]
+        B1["dataFetcher<br/>(src/nashvilleGis/dataFetcher.py)"]
+        B2["S3 Processed Parquet<br/>s3://nashville311-gis-analysis-data/processed-data/"]
+        B3["GeoPackage Generators<br/>geoPackageGenerators/*"]
     end
 
     subgraph Outputs
-        C1[S3 GeoPackages<br/>s3://.../gpkg-public/*]
-        C2[GIS Analysts<br/>ArcGIS Pro / QGIS / others]
+        C1["S3 GeoPackages<br/>s3://.../gpkg-public/*"]
+        C2["GIS Analysts<br/>ArcGIS Pro / QGIS / others"]
     end
 
     A1 -->|ArcGIS REST / GeoJSON| B1
