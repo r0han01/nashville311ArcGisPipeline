@@ -34,19 +34,19 @@ This directory contains every Python generator that produces the final ArcGIS-re
 > **Tip:** The “legacy” folders remain for historical context but the active 10-GeoPackage roadmap is driven by the bolded `.gpkg` outputs above.
 
 ### Generator highlights
-| GeoPackage | Python file | What it explains | Key highlights |
-|------------|-------------|------------------|----------------|
-| `serviceEfficiency.gpkg` | `serviceEfficiency/serviceEfficiency.py` | Where districts deliver the fastest responses relative to workload. | Efficiency score = workload ratio ÷ response-time ratio, quartiles, percentile ranks, request context for pop-ups. |
-| `geographicPatterns.gpkg` | `geographicPatterns/geographicPatterns.py` | Spatial density, clustering, concentration, variability. | Silhouette + Quantiles for categories, centroid-based stats, request distribution fields. |
-| `temporalPatterns.gpkg` | `temporalPatterns/temporalPatterns.py` | Weekday vs. weekend behavior by district. | Day-of-week breakdowns, weekday/weekend ratios, consistency measures, percentile labels. |
-| `peakHourConsistency.gpkg` | `peakHourConsistency/peakHourConsistency.py` | Peak vs. off-hour service demand. | Hour-of-day profiles, coefficient-of-variation metrics, Silhouette-based peak pattern types. |
-| `requestVolatility.gpkg` | `requestVolatility/requestVolatility.py` | Stability of request volumes. | Daily/weekly/monthly volatility coefficients, stability indexes, data-driven volatility categories. |
-| `timeBasedClusters.gpkg` | `timeBasedClusters/timeBasedClusters.py` | Temporal clustering of districts. | K-means with silhouette-selected k, cluster metrics (distance, confidence, dominant patterns). |
-| `serviceTypeInsights.gpkg` | `serviceTypeInsights/serviceTypeInsights.py` | Service mix, recurring issues, complexity. | Diversity/concentration (Herfindahl), recurring issue detection, Silhouette-based categories. |
-| `trendDirection.gpkg` | `trendDirection/trendDirection.py` | Increasing vs. decreasing request trends. | Monthly regression, slope/R²/p-value, projected next month, trend confidence scores. |
-| `predictiveHotspots.gpkg` | `predictiveHotspots/predictiveHotspots.py` | Future risk assessment based on multi-factor scoring. | Variance-based risk weights, dominant risk factors, percentile-based priority labels. |
-| `capacityPlanning.gpkg` | `capacityPlanning/capacityPlanning.py` | Who is at/near capacity and when they’ll hit limits. | Median + MAD + IQR thresholds, utilization & pressure, time-to-capacity, Silhouette categories. |
-| `optimizationOpportunities.gpkg` | `optimizationOpportunities/optimizationOpportunities.py` | Biggest improvement opportunities and expected impact. | Response/efficiency/workload gaps, volatility impact, variance-based opportunity scores, priority/category labels. |
+| GeoPackage & script | What it explains | Key highlights |
+|---------------------|------------------|----------------|
+| `serviceEfficiency.gpkg` (`serviceEfficiency/serviceEfficiency.py`) | Where districts deliver the fastest responses relative to workload. | Efficiency score = workload ratio ÷ response-time ratio, quartiles, percentile ranks, request context for pop-ups. |
+| `geographicPatterns.gpkg` (`geographicPatterns/geographicPatterns.py`) | Spatial density, clustering, concentration, variability. | Silhouette + Quantiles for categories, centroid-based stats, request distribution fields. |
+| `temporalPatterns.gpkg` (`temporalPatterns/temporalPatterns.py`) | Weekday vs. weekend behavior by district. | Day-of-week breakdowns, weekday/weekend ratios, consistency measures, percentile labels. |
+| `peakHourConsistency.gpkg` (`peakHourConsistency/peakHourConsistency.py`) | Peak vs. off-hour service demand. | Hour-of-day profiles, coefficient-of-variation metrics, Silhouette-based peak pattern types. |
+| `requestVolatility.gpkg` (`requestVolatility/requestVolatility.py`) | Stability of request volumes. | Daily/weekly/monthly volatility coefficients, stability indexes, data-driven volatility categories. |
+| `timeBasedClusters.gpkg` (`timeBasedClusters/timeBasedClusters.py`) | Temporal clustering of districts. | K-means with silhouette-selected k, cluster metrics (distance, confidence, dominant patterns). |
+| `serviceTypeInsights.gpkg` (`serviceTypeInsights/serviceTypeInsights.py`) | Service mix, recurring issues, complexity. | Diversity/concentration (Herfindahl), recurring issue detection, Silhouette-based categories. |
+| `trendDirection.gpkg` (`trendDirection/trendDirection.py`) | Increasing vs. decreasing request trends. | Monthly regression, slope/R²/p-value, projected next month, trend confidence scores. |
+| `predictiveHotspots.gpkg` (`predictiveHotspots/predictiveHotspots.py`) | Future risk assessment based on multi-factor scoring. | Variance-based risk weights, dominant risk factors, percentile-based priority labels. |
+| `capacityPlanning.gpkg` (`capacityPlanning/capacityPlanning.py`) | Who is at/near capacity and when they’ll hit limits. | Median + MAD + IQR thresholds, utilization & pressure, time-to-capacity, Silhouette categories. |
+| `optimizationOpportunities.gpkg` (`optimizationOpportunities/optimizationOpportunities.py`) | Biggest improvement opportunities and expected impact. | Response/efficiency/workload gaps, volatility impact, variance-based opportunity scores, priority/category labels. |
 
 ### Running a generator locally or in another cloud account
 1. **Set credentials:** Ensure your AWS credentials (or equivalent cloud storage creds) are configured. By default the scripts use `NashvilleConfig.BUCKET_NAME`.
