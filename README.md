@@ -6,8 +6,7 @@ Concise documentation for the ArcGIS automation project that converts rolling th
 
 ```mermaid
 graph TD
-    A1["HubNashville 311<br/>Full history feature layer"]
-    A2["HubNashville 311<br/>Current-year feature layer"]
+    A1["HubNashville 311 service requests<br/>(full history + current-year layers)"]
     A3["Council districts<br/>polygon dataset"]
 
     B1["dataFetcher.py<br/>(ArcGIS REST client + AWS uploader)"]
@@ -17,7 +16,6 @@ graph TD
     C2["GIS tools<br/>(ArcGIS Pro, QGIS, etc.)"]
 
     A1 -->|"REST / GeoJSON"| B1
-    A2 -->|"REST / GeoJSON"| B1
     B1 -->|"Rolling 3-mo parquet"| B2
     B2 -->|"Latest snapshot"| B3
     A3 -->|"Boundary download"| B3
