@@ -146,5 +146,4 @@ Typical sequence:
 - Follow the data-driven rule: no hardcoded categories, weights, or thresholds.
 - Run `read_lints` and regenerate the GeoPackage before committing.
 
-Questions or ideas? Open an issue or ping the project maintainers listed in `src/nashvilleGis/config.py`.
-
+Questions or ideas? Open an issue, or email `hello@rkatkam.com` with the subject `nashville311ArcGisPipeline - <your topic>` (the contact details live in `src/nashvilleGis/config.py` for future updates).
