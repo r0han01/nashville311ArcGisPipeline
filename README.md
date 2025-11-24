@@ -17,6 +17,7 @@ graph TD
     C2["GIS tools<br/>(ArcGIS Pro, QGIS, etc.)"]
 
     A1 -->|"REST / GeoJSON"| B1
+    A2 -->|"REST / GeoJSON"| B1
     B1 -->|"Rolling 3-mo parquet"| B2
     B2 -->|"Latest snapshot"| B3
     A3 -->|"Boundary download"| B3
