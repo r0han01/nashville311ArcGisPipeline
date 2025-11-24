@@ -6,7 +6,7 @@ Concise documentation for the ArcGIS automation project that converts rolling th
 
 ```mermaid
 graph TD
-    A1["HubNashville 311 service requests<br/>(full history + current-year layers)"]
+    A1["HubNashville 311 service requests<br/>(use full-history or current-year layer)"]
     A3["Council districts<br/>polygon dataset"]
 
     B1["dataFetcher.py<br/>(ArcGIS REST client + AWS uploader)"]
