@@ -5,31 +5,24 @@ Concise documentation for the ArcGIS automation project that converts rolling th
 ## Architecture
 
 ```mermaid
-flowchart LR
-    subgraph Sources
-        A1["HubNashville 311<br/>Full History Feature Layer"]
-        A2["HubNashville 311<br/>Current-Year Feature Layer"]
-        A3["Council Districts<br/>Polygon Dataset"]
-    end
+graph TD
+    A1["HubNashville 311<br/>Full history feature layer"]
+    A2["HubNashville 311<br/>Current-year feature layer"]
+    A3["Council districts<br/>polygon dataset"]
 
-    subgraph Pipeline
-        B1["dataFetcher<br/>(src/nashvilleGis/dataFetcher.py)"]
-        B2["S3 Processed Parquet<br/>s3://nashville311-gis-analysis-data/processed-data/"]
-        B3["GeoPackage Generators<br/>geoPackageGenerators/*"]
-    end
+    B1["dataFetcher.py<br/>(ArcGIS REST client + AWS uploader)"]
+    B2["S3 processed parquet<br/>s3://nashville311-gis-analysis-data/processed-data/"]
+    B3["GeoPackage generators<br/>geoPackageGenerators/*"]
+    C1["Published GeoPackages<br/>s3://.../gpkg-public/*"]
+    C2["GIS tools<br/>(ArcGIS Pro, QGIS, etc.)"]
 
-    subgraph Outputs
-        C1["S3 GeoPackages<br/>s3://.../gpkg-public/*"]
-        C2["GIS Analysts<br/>ArcGIS Pro / QGIS / others"]
-    end
-
-    A1 -->|ArcGIS REST / GeoJSON| B1
-    A2 -->|ArcGIS REST / GeoJSON| B1
-    B1 -->|Rolling 3-mo parquet| B2
-    B2 -->|Load latest snapshot| B3
-    A3 -->|Boundary mirror| B3
-    B3 -->|District + Request layers| C1
-    C1 -->|Download & import| C2
+    A1 -->|"REST / GeoJSON"| B1
+    A2 -->|"REST / GeoJSON"| B1
+    B1 -->|"Rolling 3-mo parquet"| B2
+    B2 -->|"Latest snapshot"| B3
+    A3 -->|"Boundary download"| B3
+    B3 -->|"District + request layers"| C1
+    C1 -->|"Download & import"| C2
 ```
 
 ## What this repo contains
