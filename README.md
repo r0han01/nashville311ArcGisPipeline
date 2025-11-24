@@ -12,7 +12,10 @@ Concise documentation for the ArcGIS automation project that converts rolling th
 ## Data source
 
 - **Primary feature layer:** hubNashville (311) Service Requests (2017 – Present)  
-  Dataset overview: https://data.nashville.gov/datasets/9fe11d5a413240ed968f5c8d71877944_0/about  
+  Dataset overview: https://data.nashville.gov/datasets/9fe11d5a413240ed968f5c8d71877944_0/about
+  ###
+  <img width="1920" height="892" alt="Nashville (311) Service Requests (2017 – Present)" src="https://github.com/user-attachments/assets/0dd9407a-5dd8-425c-9e56-79be23f349ec" />
+
   REST query (GeoJSON): https://services2.arcgis.com/HdTo6HJqh92wn4D8/arcgis/rest/services/hubNashville_(311)_Service_Requests_1/FeatureServer/0/query?outFields=*&where=1%3D1&f=geojson
 - **Alternate/current-year layer:** hubNashville (311) Service Requests – Current Year  
   Dataset overview: https://data.nashville.gov/datasets/hubnashville-311-service-requests-current-year/about
