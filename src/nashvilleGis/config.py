@@ -19,6 +19,10 @@ class NashvilleConfig:
     and data processing parameters.
     """
     
+    # Contact / Support
+    SUPPORT_EMAIL = "hello@rkatkam.com"
+    SUPPORT_SUBJECT_TEMPLATE = "nashville311ArcGisPipeline - <describe issue>"
+
     # AWS Configuration
     BUCKET_NAME = "nashville311-gis-analysis-data"
     AWS_REGION = "us-east-1"
