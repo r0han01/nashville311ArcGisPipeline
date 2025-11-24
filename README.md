@@ -20,7 +20,7 @@ Concise documentation for the ArcGIS automation project that converts rolling th
 - **Alternate/current-year layer:** hubNashville (311) Service Requests – Current Year  
   Dataset overview: https://data.nashville.gov/datasets/hubnashville-311-service-requests-current-year/about
   ###
-  <img width="1920" height="892" alt="Nashville (311) Service Requests – Current Year" src="https://github.com/user-attachments/assets/e2519776-c22c-4f4a-8bad-18c7100b5072" />
+<img width="1920" height="892" alt="Nashville (311) Service Requests – Current Year" src="https://github.com/user-attachments/assets/71c29e73-3948-43e5-b7f7-5c0a524b584c" />
 
   REST query (GeoJSON): https://services2.arcgis.com/HdTo6HJqh92wn4D8/arcgis/rest/services/hubNashville_311_Service_Requests_Current_Year_view/FeatureServer/0/query?outFields=*&where=1%3D1&f=geojson  
   (our fetcher swaps between the full-history and current-year views depending on reporting needs)
@@ -31,6 +31,9 @@ Concise documentation for the ArcGIS automation project that converts rolling th
 - **Boundary reference:** Council Districts (Current) dataset on the Nashville Open Data Portal  
   https://data.nashville.gov/datasets/council-districts-current-1/explore  
   (the API does not ship polygon geometries, so we download this authoritative shapefile and mirror it in S3 for faster automated access)
+  ###
+  <img width="1920" height="892" alt="Council Districts" src="https://github.com/user-attachments/assets/5821f815-03e2-457b-8013-df9f3624fdf7" />
+
 - **Socrata mirror:** https://data.nashville.gov/resource/9udr-2rbj.json remains a valid JSON/CSV/SoQL alternative if ArcGIS services are unavailable.
 
 ## How the pipeline runs
